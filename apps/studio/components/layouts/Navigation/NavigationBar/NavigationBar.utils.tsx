@@ -139,18 +139,6 @@ export const generateProductRoutes = (
           },
         ]
       : []),
-    ...(realtimeEnabled
-      ? [
-          {
-            key: 'realtime',
-            label: 'Realtime',
-            disabled: !isProjectActive,
-            icon: <Realtime size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
-            link: ref && (isProjectBuilding ? buildingUrl : `/project/${ref}/realtime/inspector`),
-            shortcutId: SHORTCUT_IDS.NAV_REALTIME,
-          },
-        ]
-      : []),
     ...(workersEnabled
       ? [
           {
@@ -160,6 +148,18 @@ export const generateProductRoutes = (
             icon: <Container size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
             link: ref && (isProjectBuilding ? buildingUrl : `/project/${ref}/workers`),
             shortcutId: SHORTCUT_IDS.NAV_WORKERS,
+          },
+        ]
+      : []),
+    ...(realtimeEnabled
+      ? [
+          {
+            key: 'realtime',
+            label: 'Realtime',
+            disabled: !isProjectActive,
+            icon: <Realtime size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
+            link: ref && (isProjectBuilding ? buildingUrl : `/project/${ref}/realtime/inspector`),
+            shortcutId: SHORTCUT_IDS.NAV_REALTIME,
           },
         ]
       : []),
