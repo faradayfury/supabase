@@ -1,5 +1,6 @@
 import { Auth, Database, EdgeFunctions, Realtime, SqlEditor, Storage, TableEditor } from 'icons'
 import { Blocks, Container, Lightbulb, List, Settings, Telescope } from 'lucide-react'
+import { Badge } from 'ui'
 
 import { ICON_SIZE, ICON_STROKE_WIDTH } from '@/components/interfaces/Sidebar'
 import type { Route } from '@/components/ui/ui.types'
@@ -148,6 +149,11 @@ export const generateProductRoutes = (
             icon: <Container size={ICON_SIZE} strokeWidth={ICON_STROKE_WIDTH} />,
             link: ref && (isProjectBuilding ? buildingUrl : `/project/${ref}/workers`),
             shortcutId: SHORTCUT_IDS.NAV_WORKERS,
+            badge: (
+              <Badge variant="success" className="px-1.5 py-0 text-[10px] leading-4">
+                New
+              </Badge>
+            ),
           },
         ]
       : []),

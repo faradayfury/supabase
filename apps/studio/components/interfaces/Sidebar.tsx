@@ -196,6 +196,9 @@ export function SideBarNavLink({
     <>
       {route.icon}
       <span>{route.label}</span>
+      {route.badge && sidebarState !== 'collapsed' && (
+        <span className="ml-auto">{route.badge}</span>
+      )}
     </>
   )
 

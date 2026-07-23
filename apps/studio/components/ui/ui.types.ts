@@ -9,6 +9,8 @@ export interface Route {
   link?: string
   disabled?: boolean
   linkElement?: ReactNode
+  /** Optional badge shown after the label, only when the sidebar is expanded. */
+  badge?: ReactNode
   items?: any | Route[]
   /**
    * Binds a registered keyboard shortcut to this route when set. The sidebar

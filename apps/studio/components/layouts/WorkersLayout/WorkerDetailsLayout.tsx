@@ -1,9 +1,9 @@
 import { useParams } from 'common'
-import { Lock } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, type PropsWithChildren } from 'react'
 import {
+  Badge,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
@@ -31,7 +31,7 @@ import {
   WorkerRuntimeBadge,
   WorkerStateBadge,
 } from '@/components/interfaces/Workers/WorkerBadges'
-import CopyButton from '@/components/ui/CopyButton'
+import { WorkerEndpointBar } from '@/components/interfaces/Workers/WorkerEndpointBar'
 import { withAuth } from '@/hooks/misc/withAuth'
 import { PRODUCT_NAME, WORKER_ACCESS_MODES } from '@/lib/constants/workers'
 import { ensureWorkersMockTicker, useWorkerBySlug } from '@/state/workers-mock-state'
@@ -68,11 +68,12 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
   const base = `/project/${ref}/workers/${worker.slug}`
   // Activity is the single primary tab for every worker — it covers the
   // lifecycle timeline plus session-grouped logs (which include HTTP request
-  // lines for public workers), so there's no separate Requests tab.
-  const navigationItems = [
+  // lines for public workers), so there's no separate Requests tab. Filesystem
+  // is disabled for the alpha: instances are stateless (no persistent disks).
+  const navigationItems: { label: string; href: string; disabled?: boolean }[] = [
     { label: 'Activity', href: base },
     { label: 'Terminal', href: `${base}/terminal` },
-    { label: 'Filesystem', href: `${base}/filesystem` },
+    { label: 'Filesystem', href: `${base}/filesystem`, disabled: true },
     { label: 'Settings', href: `${base}/settings` },
   ]
 
@@ -119,16 +120,7 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
               edges. */}
           <PageContainer size="full">
             {worker.access === 'public' && worker.endpoint ? (
-              <div className="flex items-center gap-2 rounded-md border border-default bg-surface-100 px-3 py-1.5">
-                <Lock size={13} strokeWidth={1.5} className="shrink-0 text-foreground-lighter" />
-                <code className="min-w-0 flex-1 truncate text-xs text-foreground-light">
-                  {worker.endpoint}
-                </code>
-                <span className="hidden shrink-0 text-xs text-foreground-lighter md:inline">
-                  Gateway auth required
-                </span>
-                <CopyButton iconOnly variant="text" size="tiny" text={worker.endpoint} />
-              </div>
+              <WorkerEndpointBar endpoint={worker.endpoint} />
             ) : (
               <Admonition
                 type="default"
@@ -146,6 +138,18 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
           <PageContainer size="full">
             <NavMenu className="border-b-0">
               {navigationItems.map((item) => {
+                if (item.disabled) {
+                  return (
+                    <NavMenuItem key={item.label} className="pointer-events-none opacity-60">
+                      <span className="flex items-center gap-2">
+                        {item.label}
+                        <Badge variant="default" className="px-1.5 py-0 text-[10px] leading-4">
+                          Coming soon
+                        </Badge>
+                      </span>
+                    </NavMenuItem>
+                  )
+                }
                 const isActive = router.asPath.split('?')[0] === item.href
                 return (
                   <NavMenuItem key={item.label} active={isActive}>
