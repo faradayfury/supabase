@@ -55,6 +55,8 @@ export interface Worker {
   region: string
   /** number of instances in this deploy (1–10) */
   instances: number
+  /** free-form labels — agents use these to group fleets of related workers */
+  tags: string[]
   /** ISO timestamp */
   createdAt: string
   createdBy: WorkerActor

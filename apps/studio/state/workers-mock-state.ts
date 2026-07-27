@@ -95,12 +95,90 @@ const slugify = (name: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 
-export interface CreateWorkerInput {
-  name: string
-  runtime: WorkerRuntimeId
-  size: WorkerSizeId
-  access: WorkerAccessMode
-  instances: number
+// ---------------------------------------------------------------------------
+// Sample fleet — for pressure-testing the list at scale (the alpha cap is 100
+// but it will be lifted, so the UI is designed for hundreds+). Agents tend to
+// create fleets of related workers, so sample workers are grouped by tag.
+// ---------------------------------------------------------------------------
+
+export const SAMPLE_FLEET_TAGS = [
+  'checkout-agent',
+  'data-pipeline',
+  'snap-demo',
+  'web-scraper',
+  'email-jobs',
+  'image-jobs',
+  'nightly-etl',
+  'llm-router',
+]
+
+const SAMPLE_RUNTIMES: WorkerRuntimeId[] = ['node', 'deno', 'bun', 'python', 'dockerfile']
+const SAMPLE_STATES: WorkerLifecycleState[] = [
+  'active',
+  'active',
+  'active',
+  'suspended',
+  'suspended',
+  'errored',
+]
+
+const buildSampleWorker = (index: number): Worker => {
+  const tag = SAMPLE_FLEET_TAGS[index % SAMPLE_FLEET_TAGS.length]
+  const runtime = pick(SAMPLE_RUNTIMES)
+  const access: WorkerAccessMode = Math.random() < 0.6 ? 'public' : 'private'
+  const state = pick(SAMPLE_STATES)
+  const name = `${tag}-${String(index).padStart(3, '0')}`
+  const slug = slugify(name)
+  const createdSecondsAgo = Math.round(60 * (5 + Math.random() * 60 * 24))
+  const idle = 120 + Math.round(Math.random() * 600)
+
+  const events: { state: WorkerLifecycleState; offset: number; note?: string }[] = [
+    { state: 'deploying', offset: createdSecondsAgo, note: 'Deploy started from CLI' },
+    { state: 'active', offset: Math.max(0, createdSecondsAgo - 4) },
+  ]
+  if (state === 'suspended') {
+    events.push({ state: 'draining', offset: idle + 2, note: 'Idle threshold reached' })
+    events.push({ state: 'suspended', offset: idle })
+  } else if (state === 'errored') {
+    events.push({
+      state: 'errored',
+      offset: Math.round(createdSecondsAgo * 0.2),
+      note: 'Unhandled exception',
+    })
+  }
+
+  const lifecycle = events.map((e) => makeLifecycleEvent(e.state, e.offset, e.note)).reverse()
+
+  const logs: WorkerLogLine[] = []
+  if (access === 'public' && state === 'active') {
+    for (let i = 0; i < 4; i++) logs.push(makeRequestLog(i * 4))
+  } else if (access === 'private') {
+    logs.push(makeStdoutLog('Batch complete: processed 128 rows', 6))
+  }
+  events.forEach((e) => logs.push(makeLifecycleLog(e.state, e.offset, e.note)))
+  logs.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))
+
+  return {
+    id: nextId('wkr'),
+    slug,
+    name,
+    runtime,
+    size: pick<WorkerSizeId>(['2x1', '2x1', '4x2']),
+    access,
+    state,
+    region: WORKER_REGION.id,
+    instances: pick([1, 1, 1, 2, 3]),
+    tags: [tag],
+    createdAt: isoSecondsAgo(createdSecondsAgo),
+    createdBy: pick([
+      { type: 'cli' as const, name: 'agent deploy' },
+      { type: 'user' as const, name: 'ana@acme.dev' },
+    ]),
+    idleSeconds: state === 'active' ? Math.round(Math.random() * 8) : idle,
+    endpoint: access === 'public' ? `https://workers.supabase.co/v1/${slug}` : undefined,
+    logs,
+    lifecycle,
+  }
 }
 
 type WorkersMockData = {
@@ -109,6 +187,7 @@ type WorkersMockData = {
 
 type WorkersMockState = WorkersMockData & {
   createWorker: (input: CreateWorkerInput) => Worker
+  seedSampleFleet: (count?: number) => void
   simulateTraffic: (id: string) => void
   suspendWorker: (id: string) => void
   resumeWorker: (id: string) => void
@@ -158,6 +237,7 @@ export const workersMockState: WorkersMockState = proxy<WorkersMockState>({
       state: 'deploying',
       region: WORKER_REGION.id,
       instances: input.instances,
+      tags: input.tags ?? [],
       createdAt: nowIso(),
       createdBy: { type: 'user', name: 'you@supabase.io' },
       idleSeconds: 0,
@@ -178,6 +258,11 @@ export const workersMockState: WorkersMockState = proxy<WorkersMockState>({
     }, WORKER_MOCK_TIMERS.resumingDurationMs)
 
     return worker
+  },
+
+  seedSampleFleet(count = 240) {
+    const fleet = Array.from({ length: count }, (_, i) => buildSampleWorker(i + 1))
+    workersMockState.workers.unshift(...fleet)
   },
 
   simulateTraffic(id: string) {
