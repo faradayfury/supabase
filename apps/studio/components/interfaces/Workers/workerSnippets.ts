@@ -36,7 +36,8 @@ export const buildWorkerSnippets = (
     aiPrompt: [
       `Deploy a Supabase Worker for me named "${name}".`,
       `Use the ${runtime.label} runtime, the ${params.size} size, ${params.access} access, and ${params.instances} ${plural}.`,
-      `Deploy it with the Supabase CLI ("supabase workers deploy"), then tail its logs and confirm it reaches the active state.`,
+      `If the Supabase CLI isn't installed, install it and link this project first.`,
+      `Deploy it with "supabase workers deploy", then tail the logs and confirm it reaches the active state.`,
     ].join(' '),
     cli: [
       `supabase workers deploy ${name} \\`,

@@ -23,15 +23,14 @@ export const WorkersEmptyState = ({ onCreate }: { onCreate: () => void }) => {
   return (
     <div className="mx-auto w-full max-w-2xl py-8">
       <Card>
-        <CardHeader>
+        <CardHeader className="gap-1">
           <CardTitle>Deploy your first {UNIT_NAME_LOWER}</CardTitle>
+          <p className="text-sm text-foreground-light">
+            Workers run managed compute in microVMs next to your database. Most teams deploy with an
+            agent or the CLI — copy a prompt to get started, or create one from the dashboard.
+          </p>
         </CardHeader>
         <CardContent className="flex flex-col gap-5">
-          <p className="text-sm text-foreground-light">
-            Workers run managed compute in microVMs right next to your database. Kick one off with
-            an agent prompt or the CLI — or create one from the dashboard.
-          </p>
-
           <WorkerSnippetTabs snippets={DEFAULT_SNIPPETS} tabs={['ai', 'cli']} />
 
           <div className="flex flex-wrap items-center gap-2">
