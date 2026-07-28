@@ -26,7 +26,10 @@ import {
 import { PageNav } from 'ui-patterns/PageNav'
 
 import WorkersLayout from './WorkersLayout'
-import { WorkerActions } from '@/components/interfaces/Workers/WorkerActions'
+import {
+  WorkerSimulateTrafficButton,
+  WorkerStartStopButton,
+} from '@/components/interfaces/Workers/WorkerActions'
 import {
   WorkerAccessBadge,
   WorkerConfigBadges,
@@ -90,8 +93,9 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
           slotClassName="sticky top-0 z-20 bg-dash-sidebar"
           actions={
             <PageBreadcrumbsActions>
+              <WorkerSimulateTrafficButton worker={worker} />
               <DocsButton href={`${DOCS_URL}/guides/workers`} />
-              <WorkerActions worker={worker} />
+              <WorkerStartStopButton worker={worker} />
             </PageBreadcrumbsActions>
           }
         >

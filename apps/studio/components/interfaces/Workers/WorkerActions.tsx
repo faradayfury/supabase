@@ -60,22 +60,20 @@ export const WorkerStartStopButton = ({ worker }: { worker: Worker }) => {
   return null
 }
 
-export const WorkerActions = ({ worker }: { worker: Worker }) => {
+/** Sends fake traffic to the worker (mock) — hidden while killed/deploying. */
+export const WorkerSimulateTrafficButton = ({ worker }: { worker: Worker }) => {
+  if (worker.state === 'killed' || worker.state === 'deploying') return null
+
   return (
-    <>
-      {worker.state !== 'killed' && worker.state !== 'deploying' && (
-        <Button
-          variant="text"
-          icon={<Zap />}
-          onClick={() => {
-            workersMockState.simulateTraffic(worker.id)
-            toast.success('Simulated traffic sent')
-          }}
-        >
-          Simulate traffic
-        </Button>
-      )}
-      <WorkerStartStopButton worker={worker} />
-    </>
+    <Button
+      variant="text"
+      icon={<Zap />}
+      onClick={() => {
+        workersMockState.simulateTraffic(worker.id)
+        toast.success('Simulated traffic sent')
+      }}
+    >
+      Simulate traffic
+    </Button>
   )
 }
