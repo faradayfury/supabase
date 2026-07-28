@@ -63,3 +63,16 @@ export const groupLogsBySession = (worker: Worker): WorkerLogSession[] => {
 
   return sessions.reverse()
 }
+
+/**
+ * All log lines since the most recent deploy: sessions newest-first, up to and
+ * including the first `Deploy`-triggered one (resumes after a deploy belong to
+ * the same deployed version). Falls back to everything if no deploy boundary
+ * is found. Feeds the "errors since last deploy" summary on the Overview tab.
+ */
+export const getLinesSinceLastDeploy = (worker: Worker): WorkerLogLine[] => {
+  const sessions = groupLogsBySession(worker)
+  const lastDeployIndex = sessions.findIndex((session) => session.trigger === 'Deploy')
+  const included = lastDeployIndex === -1 ? sessions : sessions.slice(0, lastDeployIndex + 1)
+  return included.flatMap((session) => session.lines)
+}

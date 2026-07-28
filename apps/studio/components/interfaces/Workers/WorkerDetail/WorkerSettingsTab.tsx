@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from 'ui'
+import { Input } from 'ui-patterns/DataInputs/Input'
 
 import { DeleteWorkerModal } from './DeleteWorkerModal'
 import { WorkerAccessBadge, WorkerActorBadge, WorkerRuntimeBadge } from '../WorkerBadges'
@@ -45,8 +46,16 @@ export const WorkerSettingsTab = ({ worker }: { worker: Worker }) => {
   const router = useRouter()
   const { ref } = useParams()
   const [showDelete, setShowDelete] = useState(false)
+  const [name, setName] = useState(worker.name)
 
   const size = getWorkerSize(worker.size)
+  const canSaveName = name.trim().length > 0 && name.trim() !== worker.name
+
+  const handleRename = () => {
+    if (!canSaveName) return
+    workersMockState.renameWorker(worker.id, name)
+    toast.success(`Renamed ${UNIT_NAME_LOWER} to "${name.trim()}"`)
+  }
 
   const handleDelete = () => {
     workersMockState.deleteWorker(worker.id)
@@ -58,6 +67,25 @@ export const WorkerSettingsTab = ({ worker }: { worker: Worker }) => {
   return (
     <ConstrainedIntegrationTabScaffold>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+        <section>
+          <h3 className="text-sm text-foreground">Name</h3>
+          <p className="mt-1 text-sm text-foreground-light">
+            Display name only — the {UNIT_NAME_LOWER}'s URL and CLI identifier (
+            <code className="text-code-inline">{worker.slug}</code>) stay the same.
+          </p>
+          <div className="mt-4 flex items-center gap-2">
+            <Input
+              size="small"
+              className="flex-1"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Button variant="default" disabled={!canSaveName} onClick={handleRename}>
+              Save
+            </Button>
+          </div>
+        </section>
+
         <section>
           <h3 className="text-sm text-foreground">Container</h3>
           <p className="mt-1 text-sm text-foreground-light">{WORKER_SIZE_GUIDANCE}</p>

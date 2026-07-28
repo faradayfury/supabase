@@ -188,6 +188,7 @@ type WorkersMockData = {
 type WorkersMockState = WorkersMockData & {
   createWorker: (input: CreateWorkerInput) => Worker
   seedSampleFleet: (count?: number) => void
+  renameWorker: (id: string, name: string) => void
   simulateTraffic: (id: string) => void
   suspendWorker: (id: string) => void
   resumeWorker: (id: string) => void
@@ -263,6 +264,16 @@ export const workersMockState: WorkersMockState = proxy<WorkersMockState>({
   seedSampleFleet(count = 240) {
     const fleet = Array.from({ length: count }, (_, i) => buildSampleWorker(i + 1))
     workersMockState.workers.unshift(...fleet)
+  },
+
+  // Rename updates the display name only — the slug (and its URL) stays
+  // stable so navigation and CLI references don't break, matching how Edge
+  // Function renames behave.
+  renameWorker(id: string, name: string) {
+    const worker = workersMockState.workers.find((w) => w.id === id)
+    const trimmed = name.trim()
+    if (!worker || !trimmed) return
+    worker.name = trimmed
   },
 
   simulateTraffic(id: string) {

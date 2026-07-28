@@ -1,6 +1,6 @@
 import { Bot, Cpu, Layers, MapPin, Terminal, User } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { cn } from 'ui'
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from 'ui'
 
 import type { Worker, WorkerActor } from './Workers.types'
 import {
@@ -65,18 +65,35 @@ export const WorkerRuntimeBadge = ({ runtime }: { runtime: WorkerRuntimeId }) =>
   )
 }
 
-export const WorkerAccessBadge = ({ access }: { access: WorkerAccessMode }) => (
-  <span
-    className={cn(
-      'inline-flex items-center rounded-full border px-2 py-0.5 text-xs',
-      access === 'public'
-        ? 'border-brand-500 text-brand'
-        : 'border-default text-foreground-light'
-    )}
-  >
-    {WORKER_ACCESS_MODES[access].label}
-  </span>
-)
+export const WorkerAccessBadge = ({ access }: { access: WorkerAccessMode }) => {
+  const badge = (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border px-2 py-0.5 text-xs',
+        access === 'public'
+          ? 'border-brand-500 text-brand'
+          : 'border-default text-foreground-light'
+      )}
+    >
+      {WORKER_ACCESS_MODES[access].label}
+    </span>
+  )
+
+  // Private workers have no endpoint widget in the detail header, so the badge
+  // itself carries the "its logs are its product" context on hover.
+  if (access === 'private') {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-72 text-center">
+          {WORKER_ACCESS_MODES.private.description}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  return badge
+}
 
 const MetaItem = ({ icon: Icon, children }: { icon: typeof Cpu; children: ReactNode }) => (
   <span className="inline-flex items-center gap-1.5 text-xs text-foreground-light">

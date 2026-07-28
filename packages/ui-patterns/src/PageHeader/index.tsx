@@ -69,17 +69,28 @@ const PageHeaderRoot = ({ className, size, children, ...props }: PageHeaderRootP
 // Breadcrumb
 // ============================================================================
 
-export type PageHeaderBreadcrumbProps = React.ComponentProps<typeof Breadcrumb>
+export type PageHeaderBreadcrumbProps = React.ComponentProps<typeof Breadcrumb> & {
+  /**
+   * Classes for the wrapping `PageContainer` — use this to override the
+   * container's horizontal padding (`className` lands on the inner element).
+   */
+  containerClassName?: string
+}
 
 /**
  * Breadcrumb component for page header.
  * A wrapper around Breadcrumb with page header styling.
  * Should be placed as the first child of PageHeader.
  */
-const PageHeaderBreadcrumb = ({ className, children, ...props }: PageHeaderBreadcrumbProps) => {
+const PageHeaderBreadcrumb = ({
+  className,
+  containerClassName,
+  children,
+  ...props
+}: PageHeaderBreadcrumbProps) => {
   const { size } = usePageHeaderContext()
   return (
-    <PageContainer size={size}>
+    <PageContainer size={size} className={containerClassName}>
       <Breadcrumb
         data-slot="page-header-breadcrumb"
         className={cn('flex items-center gap-4 [&_li]:text-xs', className)}
@@ -181,7 +192,13 @@ const PageHeaderDescription = ({ className, children, ...props }: PageHeaderDesc
 // Meta
 // ============================================================================
 
-export type PageHeaderMetaProps = React.ComponentProps<'div'>
+export type PageHeaderMetaProps = React.ComponentProps<'div'> & {
+  /**
+   * Classes for the wrapping `PageContainer` — use this to override the
+   * container's horizontal padding (`className` lands on the inner element).
+   */
+  containerClassName?: string
+}
 
 /**
  * Meta wrapper for page header.
@@ -189,10 +206,15 @@ export type PageHeaderMetaProps = React.ComponentProps<'div'>
  * Should be placed after PageHeaderBreadcrumb (if present) and before PageHeaderNavigationTabs.
  * Uses CSS to style children based on their data-slot attributes.
  */
-const PageHeaderMeta = ({ className, children, ...props }: PageHeaderMetaProps) => {
+const PageHeaderMeta = ({
+  className,
+  containerClassName,
+  children,
+  ...props
+}: PageHeaderMetaProps) => {
   const { size } = usePageHeaderContext()
   return (
-    <PageContainer size={size}>
+    <PageContainer size={size} className={containerClassName}>
       <div
         data-slot="page-header-meta"
         className={cn(
@@ -236,17 +258,27 @@ PageHeaderAside.displayName = 'PageHeaderAside'
 // Navigation
 // ============================================================================
 
-export type PageHeaderNavigationTabsProps = React.ComponentProps<'div'>
+export type PageHeaderNavigationTabsProps = React.ComponentProps<'div'> & {
+  /**
+   * Classes for the wrapping `PageContainer` — use this to override the
+   * container's horizontal padding (`className` lands on the inner element).
+   */
+  containerClassName?: string
+}
 
 /**
  * Navigation component for page header.
  * Container for tab navigation (NavMenu).
  * Should be placed as the last child of PageHeader.
  */
-const PageHeaderNavigationTabs = ({ className, ...props }: PageHeaderNavigationTabsProps) => {
+const PageHeaderNavigationTabs = ({
+  className,
+  containerClassName,
+  ...props
+}: PageHeaderNavigationTabsProps) => {
   const { size } = usePageHeaderContext()
   return (
-    <PageContainer size={size} className={cn(size === 'full' && 'border-b')}>
+    <PageContainer size={size} className={cn(size === 'full' && 'border-b', containerClassName)}>
       <div
         data-slot="page-header-footer"
         className={cn('w-full [&>nav]:border-b-0', size !== 'full' && 'border-b', className)}

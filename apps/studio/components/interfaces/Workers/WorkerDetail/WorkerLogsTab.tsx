@@ -1,73 +1,65 @@
 import { useParams } from 'common'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Search } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo } from 'react'
-import { Button, cn } from 'ui'
+import { useState } from 'react'
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'ui'
+import { Input } from 'ui-patterns/DataInputs/Input'
 
-import { WorkerLogSessions } from './WorkerLogSessions'
-import { groupLogsBySession } from './workerSessions'
+import { WorkerLogSessions, type WorkerLogKindFilter } from './WorkerLogSessions'
 import type { Worker } from '../Workers.types'
 import { ConstrainedIntegrationTabScaffold } from '@/components/interfaces/Integrations/ConstrainedIntegrationTabScaffold'
 import { LOG_DESTINATION } from '@/lib/constants/workers'
 
+const KIND_FILTERS: { value: WorkerLogKindFilter; label: string }[] = [
+  { value: 'all', label: 'All lines' },
+  { value: 'request', label: 'Requests' },
+  { value: 'stdout', label: 'Worker output' },
+  { value: 'lifecycle', label: 'Lifecycle' },
+]
+
 export const WorkerLogsTab = ({ worker }: { worker: Worker }) => {
   const { ref } = useParams()
-
-  // High-level summary of the current run. Deep log analysis lives in the Logs
-  // Explorer (unified logs) — we just surface a couple of headline numbers here.
-  const lastSession = useMemo(
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    () => groupLogsBySession(worker)[0],
-    [worker.logs, worker.lifecycle]
-  )
-  const requests = lastSession?.lines.filter((line) => line.kind === 'request').length ?? 0
-  const errors =
-    lastSession?.lines.filter(
-      (line) =>
-        (line.kind === 'request' && (line.status ?? 0) >= 500) ||
-        (line.kind === 'lifecycle' && line.state === 'errored')
-    ).length ?? 0
+  const [search, setSearch] = useState('')
+  const [kind, setKind] = useState<WorkerLogKindFilter>('all')
 
   return (
     <ConstrainedIntegrationTabScaffold>
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 rounded-md border border-default bg-surface-100 px-4 py-3">
-          <SummaryStat label="Requests" value={requests} sub="current run" />
-          <SummaryStat label="Errors" value={errors} sub="current run" isError={errors > 0} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            size="tiny"
+            className="w-full md:w-56"
+            icon={<Search size={14} />}
+            placeholder="Search log lines"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <Select value={kind} onValueChange={(value) => setKind(value as WorkerLogKindFilter)}>
+            <SelectTrigger size="tiny" className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {KIND_FILTERS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button asChild variant="default" icon={<ExternalLink />} className="ml-auto">
-            <Link href={`/project/${ref}/logs/explorer?q=${worker.slug}`}>Open in Logs Explorer</Link>
+            <Link href={`/project/${ref}/logs/explorer?q=${worker.slug}`}>
+              Open in Logs Explorer
+            </Link>
           </Button>
         </div>
 
-        <div>
-          <h3 className="text-sm text-foreground">Sessions</h3>
-          <p className="mt-1 text-sm text-foreground-light">
-            Each run is grouped as a session — a new group starts whenever the worker deploys or
-            resumes, and lifecycle events show inline. Full history streams to {LOG_DESTINATION}.
-          </p>
-        </div>
-        <WorkerLogSessions worker={worker} />
+        <p className="text-sm text-foreground-light">
+          Each run is grouped as a session — a new group starts whenever the worker deploys or
+          resumes, with lifecycle events inline. Full history streams to {LOG_DESTINATION}.
+        </p>
+
+        <WorkerLogSessions worker={worker} search={search} kind={kind} />
       </div>
     </ConstrainedIntegrationTabScaffold>
   )
 }
-
-const SummaryStat = ({
-  label,
-  value,
-  sub,
-  isError = false,
-}: {
-  label: string
-  value: number
-  sub?: string
-  isError?: boolean
-}) => (
-  <div>
-    <p className="text-xs uppercase tracking-wide text-foreground-lighter">{label}</p>
-    <p className={cn('text-lg tabular-nums', isError ? 'text-destructive' : 'text-foreground')}>
-      {value.toLocaleString()}
-    </p>
-    {sub && <p className="text-xs text-foreground-lighter">{sub}</p>}
-  </div>
-)

@@ -7,17 +7,48 @@ import { cn } from 'ui'
 import { WorkerLogFeed } from './WorkerLogFeed'
 import { groupLogsBySession } from './workerSessions'
 import { WorkerStateDot } from '../WorkerBadges'
-import type { Worker } from '../Workers.types'
+import type { Worker, WorkerLogLine } from '../Workers.types'
 import { WORKER_STATE_LABELS } from '@/lib/constants/workers'
 
 dayjs.extend(relativeTime)
 
-export const WorkerLogSessions = ({ worker }: { worker: Worker }) => {
+export type WorkerLogKindFilter = 'all' | WorkerLogLine['kind']
+
+const matchesSearch = (line: WorkerLogLine, query: string) => {
+  const haystack = `${line.message} ${line.method ?? ''} ${line.path ?? ''} ${line.status ?? ''}`
+  return haystack.toLowerCase().includes(query)
+}
+
+export const WorkerLogSessions = ({
+  worker,
+  search = '',
+  kind = 'all',
+}: {
+  worker: Worker
+  search?: string
+  kind?: WorkerLogKindFilter
+}) => {
   const sessions = useMemo(
     () => groupLogsBySession(worker),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [worker.logs, worker.lifecycle]
   )
+
+  // Client-side filtering over the session lines; sessions with no matching
+  // lines are hidden so the list stays scannable.
+  const filteredSessions = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query && kind === 'all') return sessions
+    return sessions
+      .map((session) => ({
+        ...session,
+        lines: session.lines.filter(
+          (line) =>
+            (kind === 'all' || line.kind === kind) && (!query || matchesSearch(line, query))
+        ),
+      }))
+      .filter((session) => session.lines.length > 0)
+  }, [sessions, search, kind])
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
@@ -25,12 +56,20 @@ export const WorkerLogSessions = ({ worker }: { worker: Worker }) => {
     return <p className="text-sm text-foreground-lighter">No sessions yet</p>
   }
 
+  if (filteredSessions.length === 0) {
+    return (
+      <p className="text-sm text-foreground-lighter">
+        No log lines match your search or filters.
+      </p>
+    )
+  }
+
   const toggle = (id: string, defaultOpen: boolean) =>
     setExpanded((prev) => ({ ...prev, [id]: !(prev[id] ?? defaultOpen) }))
 
   return (
     <div className="flex flex-col gap-2">
-      {sessions.map((session, index) => {
+      {filteredSessions.map((session, index) => {
         // Newest session is open by default.
         const isOpen = expanded[session.id] ?? index === 0
         const requestCount = session.lines.filter((line) => line.kind === 'request').length

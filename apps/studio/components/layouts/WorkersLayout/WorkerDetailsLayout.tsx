@@ -14,7 +14,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from 'ui'
-import { Admonition } from 'ui-patterns/admonition'
 import { PageBreadcrumbs, PageBreadcrumbsActions } from 'ui-patterns/PageBreadcrumbs'
 import { PageContainer } from 'ui-patterns/PageContainer'
 import {
@@ -24,6 +23,7 @@ import {
   PageHeaderSummary,
   PageHeaderTitle,
 } from 'ui-patterns/PageHeader'
+import { PageNav } from 'ui-patterns/PageNav'
 
 import WorkersLayout from './WorkersLayout'
 import { WorkerActions } from '@/components/interfaces/Workers/WorkerActions'
@@ -34,9 +34,16 @@ import {
   WorkerStateBadge,
 } from '@/components/interfaces/Workers/WorkerBadges'
 import { WorkerEndpointBar } from '@/components/interfaces/Workers/WorkerEndpointBar'
+import { DocsButton } from '@/components/ui/DocsButton'
 import { withAuth } from '@/hooks/misc/withAuth'
-import { PRODUCT_NAME, WORKER_ACCESS_MODES } from '@/lib/constants/workers'
+import { DOCS_URL } from '@/lib/constants'
+import { PRODUCT_NAME } from '@/lib/constants/workers'
 import { ensureWorkersMockTicker, useWorkerBySlug } from '@/state/workers-mock-state'
+
+// The de facto page-chrome horizontal padding (see pageChromeClassName in
+// PageBreadcrumbs/PageNav) — applied to the header pieces so the title,
+// endpoint row and tabs line up with the breadcrumb above them.
+const CHROME_PADDING = 'px-4 xl:px-4'
 
 interface WorkerDetailsLayoutProps {
   title: string
@@ -64,16 +71,13 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
     return <WorkersLayout title={title} browserTitle={browserTitle} />
   }
 
-  // Primary tab is mode-dependent: public workers lead on Requests, private on
-  // Logs. Terminal and Filesystem give a live shell / file view (gated on the
-  // worker running). Private workers have no Requests tab (there's no endpoint).
   const base = `/project/${ref}/workers/${worker.slug}`
-  // Activity is the single primary tab for every worker — it covers the
-  // lifecycle timeline plus session-grouped logs (which include HTTP request
-  // lines for public workers), so there's no separate Requests tab. Filesystem
-  // is disabled for the alpha: instances are stateless (no persistent disks).
+  // Overview is the aggregate summary; Logs carries the session-grouped stream.
+  // Filesystem is disabled for the alpha: instances are stateless (no
+  // persistent disks).
   const navigationItems: { label: string; href: string; disabled?: boolean }[] = [
-    { label: 'Activity', href: base },
+    { label: 'Overview', href: base },
+    { label: 'Logs', href: `${base}/logs` },
     { label: 'Terminal', href: `${base}/terminal` },
     { label: 'Filesystem', href: `${base}/filesystem`, disabled: true },
     { label: 'Settings', href: `${base}/settings` },
@@ -86,6 +90,7 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
           slotClassName="sticky top-0 z-20 bg-dash-sidebar"
           actions={
             <PageBreadcrumbsActions>
+              <DocsButton href={`${DOCS_URL}/guides/workers`} />
               <WorkerActions worker={worker} />
             </PageBreadcrumbsActions>
           }
@@ -104,7 +109,7 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
         </PageBreadcrumbs>
 
         <PageHeader size="full">
-          <PageHeaderMeta>
+          <PageHeaderMeta containerClassName={CHROME_PADDING}>
             <PageHeaderSummary>
               <PageHeaderTitle>{worker.name}</PageHeaderTitle>
               <PageHeaderDescription className="flex flex-row flex-wrap items-center gap-x-3 gap-y-1 text-sm!">
@@ -116,29 +121,20 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
             </PageHeaderSummary>
           </PageHeaderMeta>
 
-          {/* Access-mode explainer lives in the shared header so it's visible
-              regardless of which tab is open. Wrapped in PageContainer so it
-              shares the header's horizontal padding rather than bleeding to the
-              edges. */}
-          <PageContainer size="full">
-            {worker.access === 'public' && worker.endpoint ? (
+          {/* Endpoint row for public workers only — private workers simply
+              don't have one (the Private badge tooltip carries the context). */}
+          {worker.access === 'public' && worker.endpoint && (
+            <PageContainer size="full" className={CHROME_PADDING}>
               <WorkerEndpointBar endpoint={worker.endpoint} />
-            ) : (
-              <Admonition
-                type="default"
-                title="No endpoint"
-                description={WORKER_ACCESS_MODES.private.description}
-              />
-            )}
-          </PageContainer>
-
+            </PageContainer>
+          )}
         </PageHeader>
 
         {/* Tabs live outside PageHeader so they can stick just below the
             breadcrumb bar once the title/meta scrolls away. */}
-        <div className="sticky top-(--header-height) z-10 mt-4 border-b border-default bg-dash-sidebar">
-          <PageContainer size="full">
-            <NavMenu className="border-b-0">
+        <div className="sticky top-(--header-height) z-10 mt-4 bg-dash-sidebar">
+          <PageNav>
+            <NavMenu>
               {navigationItems.map((item) => {
                 if (item.disabled) {
                   return (
@@ -163,7 +159,7 @@ const WorkerDetailsLayout = ({ title, children }: PropsWithChildren<WorkerDetail
                 )
               })}
             </NavMenu>
-          </PageContainer>
+          </PageNav>
         </div>
 
         {children}
