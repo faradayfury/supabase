@@ -224,6 +224,37 @@ export const WORKER_MOCK_TIMERS = {
 export const LOG_DESTINATION = 'Logflare'
 
 // ---------------------------------------------------------------------------
+// Locked config — not configurable at alpha, but still applied to every
+// worker. Shown read-only wherever a worker is configured (e.g. the create
+// dialog) so the fixed values are honest and visible up front, not hidden.
+// ---------------------------------------------------------------------------
+
+export interface WorkerLockedConfigItem {
+  label: string
+  value: string
+  hint: string
+}
+
+export const WORKER_LOCKED_CONFIG: WorkerLockedConfigItem[] = [
+  { label: 'Region', value: WORKER_REGION.label, hint: WORKER_REGION.why },
+  {
+    label: 'Persistent disk',
+    value: 'None',
+    hint: 'Instances are stateless — nothing written to disk survives a redeploy, restart, or resume from suspend.',
+  },
+  {
+    label: 'Load balancing',
+    value: 'Off',
+    hint: 'Each request reaches a single instance. There is no load balancing across instances at alpha.',
+  },
+  {
+    label: 'Logs',
+    value: LOG_DESTINATION,
+    hint: `Request logs, worker logs and lifecycle events all stream to ${LOG_DESTINATION}, tagged with this worker.`,
+  },
+]
+
+// ---------------------------------------------------------------------------
 // Honest "not yet" copy — features intentionally absent at alpha.
 // ---------------------------------------------------------------------------
 

@@ -1,4 +1,5 @@
 import { useParams } from 'common'
+import { Lock } from 'lucide-react'
 import { useMemo, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import {
@@ -16,6 +17,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from 'ui'
 import { Input } from 'ui-patterns/DataInputs/Input'
 
@@ -26,6 +30,7 @@ import {
   UNIT_NAME_LOWER,
   WORKER_ACCESS_MODES,
   WORKER_INSTANCE_LIMITS,
+  WORKER_LOCKED_CONFIG,
   WORKER_RUNTIMES,
   WORKER_SIZES,
   type WorkerAccessMode,
@@ -168,6 +173,31 @@ export const CreateWorkerDialog = ({
                 }}
               />
             </Field>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-foreground-light">
+              Also applied to every worker
+              <span className="ml-1.5 text-foreground-lighter">— not configurable at alpha</span>
+            </p>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-default bg-border sm:grid-cols-4">
+              {WORKER_LOCKED_CONFIG.map((item) => (
+                <Tooltip key={item.label}>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-default bg-surface-100 p-3 text-left">
+                      <p className="flex items-center gap-1 text-xs text-foreground-lighter">
+                        <Lock size={11} strokeWidth={1.5} />
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-sm text-foreground-light">{item.value}</p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-64 text-center">
+                    {item.hint}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
